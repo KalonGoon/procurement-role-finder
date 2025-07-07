@@ -1,43 +1,32 @@
-# streamlit_app.py
+from googlesearch import search
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-import time
-import json
+import pandas as pd
+from datetime import datetime
 
-SEARCH_URLS = [
-    "https://www.indeed.com/jobs?q=procurement+analyst+remote+California",
-    "https://www.indeed.com/jobs?q=procurement+analyst+remote+Tampa",
-    # Add LinkedIn or ZipRecruiter URLs as needed
-]
+SEARCH_QUERY = 'site:linkedin.com/jobs "procurement analyst" (California OR Tampa OR Remote)'
+NUM_RESULTS = 20  # Adjust as needed
 
-@st.cache_data(ttl=3600)
-def fetch_jobs(url):
-    resp = requests.get(url)
-    soup = BeautifulSoup(resp.text, "html.parser")
-    jobs = []
-    for div in soup.find_all("div", class_="jobsearch-SerpJobCard"):
-        title = div.find("a", class_="jobtitle").text.strip()
-        company = div.find("span", class_="company").text.strip()
-        loc = div.find("div", class_="location").text.strip()
-        link = "https://indeed.com" + div.find("a")["href"]
-        jobs.append({"title": title, "company": company, "location": loc, "link": link})
-    return jobs
+@st.cache_data(ttl=86400)
+def run_google_search():
+    results = []
+    for url in search(SEARCH_QUERY, num_results=NUM_RESULTS, lang="en"):
+        results.append({
+            "title": url.split("/")[-1].replace("-", " ").title(),
+            "url": url,
+            "date_logged": datetime.now().strftime("%Y-%m-%d")
+        })
+    return results
 
-def main():
-    st.title("🛠️ Procurement Analytics Job Tracker")
-    jobs = []
-    for url in SEARCH_URLS:
-        jobs += fetch_jobs(url)
-    st.write(f"Found {len(jobs)} jobs")
-    for job in jobs:
-        st.write(f"[**{job['title']}**]({job['link']}) – {job['company']} | {job['location']}")
+st.title("🔎 Google Job Search Log")
+jobs = run_google_search()
 
-    if st.button("Show me new jobs"):
-        new = fetch_jobs(SEARCH_URLS[0])
-        st.write(f"Latest from CA: {len(new)} jobs")
-        for j in new[:5]:
-            st.write(f"- {j['title']} at {j['company']}")
+if jobs:
+    df = pd.DataFrame(jobs)
+    st.write(df)
 
-if __name__ == "__main__":
-    main()
+    # Optional: save to log file
+    df.to_csv("job_log.csv", mode="a", header=False, index=False)
+    st.success("✅ Logged job links")
+
+else:
+    st.warning("No results found.")
