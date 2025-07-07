@@ -1,32 +1,54 @@
-from googlesearch import search
 import streamlit as st
 import pandas as pd
+from serpapi import GoogleSearch
 from datetime import datetime
 
-SEARCH_QUERY = 'site:linkedin.com/jobs "procurement analyst" (California OR Tampa OR Remote)'
-NUM_RESULTS = 20  # Adjust as needed
+# -------------------------------
+# SETUP
+# -------------------------------
+st.set_page_config(page_title="Procurement Job Finder", page_icon="🔎")
+st.title("🔎 Procurement Job Finder via Google Search")
 
+params = {
+    "engine": "google",
+    "q": 'site:linkedin.com/jobs "procurement analyst" (remote OR tampa OR california)',
+    "hl": "en",
+    "num": 15,
+    "api_key": st.secrets["66927d7bd8a298802541a89d7a4f965cc40055d87c518e7c85764d445f58c1bd"]
+}
+
+# -------------------------------
+# SEARCH FUNCTION
+# -------------------------------
 @st.cache_data(ttl=86400)
-def run_google_search():
-    results = []
-    for url in search(SEARCH_QUERY, num_results=NUM_RESULTS, lang="en"):
-        results.append({
-            "title": url.split("/")[-1].replace("-", " ").title(),
-            "url": url,
+def fetch_search_results():
+    search = GoogleSearch(params)
+    results = search.get_dict()
+    links = []
+    for r in results.get("organic_results", []):
+        links.append({
+            "title": r.get("title"),
+            "url": r.get("link"),
+            "source": "Google",
             "date_logged": datetime.now().strftime("%Y-%m-%d")
         })
-    return results
+    return links
 
-st.title("🔎 Google Job Search Log")
-jobs = run_google_search()
+# -------------------------------
+# MAIN APP
+# -------------------------------
+st.info("Searching Google for new job listings...")
 
-if jobs:
-    df = pd.DataFrame(jobs)
-    st.write(df)
+results = fetch_search_results()
 
-    # Optional: save to log file
+if results:
+    df = pd.DataFrame(results)
+    st.success(f"✅ Found {len(df)} job listings!")
+    st.dataframe(df)
+
+    # Save to CSV log
     df.to_csv("job_log.csv", mode="a", header=False, index=False)
-    st.success("✅ Logged job links")
+    st.caption("🗃️ Results appended to job_log.csv")
 
 else:
-    st.warning("No results found.")
+    st.warning("No results found. Try adjusting your query or check your API key.")
