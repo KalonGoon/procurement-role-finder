@@ -2,3 +2,5 @@ streamlit
 requests
 beautifulsoup4
 lxml
+pandas
+google-search-results
