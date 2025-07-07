@@ -14,7 +14,7 @@ params = {
     "q": 'site:linkedin.com/jobs "procurement analyst" (remote OR tampa OR california)',
     "hl": "en",
     "num": 15,
-    "api_key": st.secrets["66927d7bd8a298802541a89d7a4f965cc40055d87c518e7c85764d445f58c1bd"]
+    "api_key": st.secrets["SERPAPI_KEY"]
 }
 
 # -------------------------------
