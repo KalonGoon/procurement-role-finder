@@ -5,3 +5,6 @@ lxml
 pandas
 google-search-results
 serpapi
+beautifulsoup4
+lxml
+requests
